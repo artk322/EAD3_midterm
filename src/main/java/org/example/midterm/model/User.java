@@ -1,45 +1,70 @@
 package org.example.midterm.model;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import javax.persistence.*;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "users")
-public class User {
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
+    @Column(unique = true)
+    private String username;
     private String password;
 
-    public User() {
+    // OneToOne
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private UserData userData;
+
+    // OneToMany
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Note> noteList;
+
+
+    // ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles",
+            joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
+            inverseJoinColumns = {@JoinColumn(name = "role_id", referencedColumnName = "id")}
+    )
+    private List<Role> userRoles;
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return userRoles;
     }
 
-    public User(String name, String password) {
-        this.name = name;
-        this.password = password;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public String getPassword() {
-        return password;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
